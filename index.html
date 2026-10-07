@@ -109,7 +109,7 @@
     .hand-button {
       position: relative;
       display: inline-block;
-      width: 220px;
+      width: 260px;
       max-width: 80%;
       padding: 0;
       border: none;
@@ -121,23 +121,23 @@
       display: block;
       width: 100%;
       height: auto;
+      mix-blend-mode: multiply; /* blends the photo's white background into the page */
     }
     .hand-button span {
       position: absolute;
       left: 50%;
-      top: 58%;
-      transform: translate(-50%, -50%) rotate(-8deg);
+      top: 62%;
+      transform: translate(-50%, -50%);
       white-space: nowrap;
-      font-family: Impact, "Arial Black", sans-serif;
-      font-size: 30px;
-      color: #fff200;
-      -webkit-text-stroke: 2px #000;
-      text-shadow: 3px 3px 0 #000;
+      font-family: inherit; /* same font as the rest of the page */
+      font-size: 22px;
+      font-weight: bold;
+      color: #0b3d6b;
+      text-shadow: 0 0 4px #fff, 0 0 8px #fff, 0 0 12px #fff;
       pointer-events: none;
     }
-    .hand-button.slap { transform: scale(0.85) rotate(-6deg); }
+    .hand-button.slap { transform: scale(0.88); }
     .five-count {
-      font-family: "Comic Sans MS", "Comic Sans", cursive;
       color: #0b3d6b;
       margin-top: 6px;
     }
@@ -185,10 +185,10 @@
       <li><b>Once a year: the big makeover.</b> During the "catastrophic molt," a penguin replaces <i>all</i> its feathers at once. It looks extremely scruffy and can't swim for a few weeks, so it stays on land and lives off its fat until the new coat comes in.</li>
     </ol>
 
-    <!-- High five! Hand image: Twemoji (CC-BY 4.0), credited in the footer -->
+    <!-- High five! Hand photo: Jiajitan, Wikimedia Commons (CC0 / public domain) -->
     <div class="high-five">
       <button class="hand-button" id="hand" type="button" aria-label="High five me!">
-        <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@17.0.3/assets/svg/1f590.svg" alt="">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Boys_palm_%E6%89%8B%E6%8E%8C_%E6%89%8B%E6%9D%BF%E5%BF%83.png/500px-Boys_palm_%E6%89%8B%E6%8E%8C_%E6%89%8B%E6%9D%BF%E5%BF%83.png" alt="">
         <span>HIGH FIVE ME!</span>
       </button>
       <div class="five-count" id="fiveCount">High fives so far: 0</div>
@@ -196,8 +196,8 @@
 
     <footer>
       Best viewed in 800x600 with your speakers ON &#128266;<br>
-      Hand graphic: <a href="https://github.com/jdecked/twemoji">Twemoji</a>, licensed
-      <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY 4.0</a><br>
+      Hand photo: Jiajitan via
+      <a href="https://commons.wikimedia.org/wiki/File:Boys_palm_%E6%89%8B%E6%8E%8C_%E6%89%8B%E6%9D%BF%E5%BF%83.png">Wikimedia Commons</a> (CC0)<br>
       &copy; 2026 Your Name
     </footer>
   </div>
@@ -252,11 +252,30 @@
   <script>
     // ---- Start the music on the visitor's first click or keypress ----
     const player = document.querySelector("midi-player");
-    function startMusic() {
-      if (player && !player.playing) player.start();
+
+    // If song.mid isn't in the repo, try entertainer.mid instead
+    fetch("song.mid", { method: "HEAD" }).then(r => {
+      if (!r.ok) player.src = "entertainer.mid";
+    }).catch(() => {});
+
+    // Keep trying on each click/keypress until the music actually starts
+    function startMusic(e) {
+      if (!player) return;
+      if (e && e.target.closest && e.target.closest("midi-player")) return; // the player's own buttons handle themselves
+      if (!player.playing && !trying) {
+        trying = true;
+        setTimeout(() => (trying = false), 3000); // give the song a few seconds to load before trying again
+        try { player.start(); } catch (err) { trying = false; }
+      }
     }
-    document.addEventListener("click", startMusic, { once: true });
-    document.addEventListener("keydown", startMusic, { once: true });
+    let trying = false;
+    function stopListening() {
+      document.removeEventListener("click", startMusic);
+      document.removeEventListener("keydown", startMusic);
+    }
+    document.addEventListener("click", startMusic);
+    document.addEventListener("keydown", startMusic);
+    player.addEventListener("start", stopListening);
 
     // ---- High five + particle burst ----
     const sparkCanvas = document.getElementById("sparkles");
