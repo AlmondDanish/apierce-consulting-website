@@ -185,5 +185,16 @@
       draw();
     }
   </script>
+
+
+  <script>
+  // Start the music the first time the visitor clicks or presses a key anywhere
+  const player = document.querySelector("midi-player");
+  function startMusic() {
+    if (player && !player.playing) player.start();
+  }
+  document.addEventListener("click", startMusic, { once: true });
+  document.addEventListener("keydown", startMusic, { once: true });
+</script>
 </body>
 </html>
