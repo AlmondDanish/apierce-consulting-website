@@ -1,1 +1,189 @@
-   <h1>Mic check. Mic Check. Can you hear me?</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Penguin Grooming Page</title>
+
+  <!-- MIDI player (plays song.mid in the browser) -->
+  <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: #1c2b3a;
+      color: #000;
+      font-family: Verdana, Tahoma, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* The rain canvas sits on top of everything but lets clicks pass through */
+    #rain {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .page {
+      position: relative;
+      max-width: 680px;
+      margin: 0 auto;
+      background: #e8f1f8;
+      border: 3px ridge #9fb8cc;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      text-align: center;
+      font-family: "Comic Sans MS", "Comic Sans", cursive;
+      font-size: 2.2em;
+      color: #0b3d6b;
+      text-shadow: 2px 2px 0 #9fd0ff;
+    }
+
+    .tagline {
+      margin: 0 0 20px;
+      text-align: center;
+      font-style: italic;
+      color: #335;
+    }
+
+    .photo {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 3px ridge #9fb8cc;
+    }
+
+    .credit {
+      font-size: 11px;
+      color: #556;
+      text-align: right;
+      margin: 4px 0 20px;
+    }
+
+    h2 {
+      font-family: "Comic Sans MS", "Comic Sans", cursive;
+      color: #0b3d6b;
+      border-bottom: 2px dashed #9fb8cc;
+      padding-bottom: 4px;
+      margin: 24px 0 12px;
+    }
+
+    ol { padding-left: 24px; }
+    li { margin-bottom: 12px; }
+    li b { color: #0b3d6b; }
+
+    .music-box {
+      background: #000;
+      color: #33ff33;
+      border: 3px ridge #9fb8cc;
+      padding: 12px;
+      text-align: center;
+      font-family: "Courier New", monospace;
+    }
+    .music-box p { margin: 0 0 8px; }
+    midi-player { display: block; width: 100%; }
+
+    a { color: #0645ad; }
+    a:visited { color: #6a2c91; }
+
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #556;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="rain"></canvas>
+
+  <div class="page">
+    <h1>~*~ The Penguin Grooming Page ~*~</h1>
+    <p class="tagline">Looking sharp in a tuxedo takes WORK.</p>
+
+    <!-- Public domain photo: Josh Landis, U.S. Antarctic Program / National Science Foundation -->
+    <img class="photo"
+         src="https://upload.wikimedia.org/wikipedia/commons/2/27/Emperor_penguins.jpg"
+         alt="Emperor penguins standing together on the Antarctic ice">
+    <p class="credit">
+      Photo: Emperor penguins by Josh Landis, U.S. Antarctic Program / NSF (public domain) ·
+      <a href="https://commons.wikimedia.org/wiki/File:Emperor_penguins.jpg">source</a>
+    </p>
+
+    <div class="music-box">
+      <p>&#9835; NOW PLAYING: "The Entertainer" by Scott Joplin (1902) &#9835;</p>
+      <midi-player src="song.mid" sound-font></midi-player>
+    </div>
+
+    <h2>A Penguin's Daily Grooming Routine</h2>
+    <ol>
+      <li><b>Shake it off.</b> First thing after a swim, a good full-body wiggle flings off extra water and ice.</li>
+      <li><b>Grab the oil.</b> Penguins have a special preen gland near the base of the tail that makes oil. They rub their beak against it to pick some up.</li>
+      <li><b>Spread it everywhere.</b> Using the beak, they work that oil through their feathers, one section at a time. This is what keeps them waterproof in freezing water.</li>
+      <li><b>Zip the feathers back together.</b> Feathers have tiny hooks that lock together like Velcro. Preening lines them back up so the coat stays tight and warm.</li>
+      <li><b>Get help with the hard-to-reach spots.</b> Penguins can't reach their own head and neck, so partners preen each other. Scientists call it <i>allopreening</i>, and it's also how pairs bond.</li>
+      <li><b>Once a year: the big makeover.</b> During the "catastrophic molt," a penguin replaces <i>all</i> its feathers at once. It looks extremely scruffy and can't swim for a few weeks, so it stays on land and lives off its fat until the new coat comes in.</li>
+    </ol>
+
+    <footer>
+      Best viewed in 800x600 with your speakers ON &#128266;<br>
+      &copy; 2026 Your Name
+    </footer>
+  </div>
+
+  <script>
+    // Simple rain effect across the whole page
+    const canvas = document.getElementById("rain");
+    const ctx = canvas.getContext("2d");
+    let drops = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const count = Math.floor(canvas.width / 4); // more width = more rain
+      drops = Array.from({ length: count }, () => newDrop(true));
+    }
+
+    function newDrop(anywhere) {
+      return {
+        x: Math.random() * canvas.width,
+        y: anywhere ? Math.random() * canvas.height : -20,
+        len: 10 + Math.random() * 15,
+        speed: 6 + Math.random() * 8
+      };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "rgba(174, 194, 224, 0.55)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (const d of drops) {
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - 2, d.y + d.len); // slight slant
+        d.y += d.speed;
+        d.x -= 0.3;
+        if (d.y > canvas.height) Object.assign(d, newDrop(false));
+      }
+      ctx.stroke();
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    // Skip the animation for visitors who've asked their computer for less motion
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      draw();
+    }
+  </script>
+</body>
+</html>
