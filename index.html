@@ -100,10 +100,62 @@
       font-size: 12px;
       color: #556;
     }
+
+    /* ---- High five ---- */
+    .high-five {
+      text-align: center;
+      margin: 28px 0 8px;
+    }
+    .hand-button {
+      position: relative;
+      display: inline-block;
+      width: 220px;
+      max-width: 80%;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: transform 0.08s;
+    }
+    .hand-button img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .hand-button span {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      white-space: nowrap;
+      font-family: Impact, "Arial Black", sans-serif;
+      font-size: 30px;
+      color: #fff200;
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 3px 3px 0 #000;
+      pointer-events: none;
+    }
+    .hand-button.slap { transform: scale(0.85) rotate(-6deg); }
+    .five-count {
+      font-family: "Comic Sans MS", "Comic Sans", cursive;
+      color: #0b3d6b;
+      margin-top: 6px;
+    }
+
+    /* Particles canvas: above everything, clicks pass through */
+    #sparkles {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
   </style>
 </head>
 <body>
   <canvas id="rain"></canvas>
+  <canvas id="sparkles"></canvas>
 
   <div class="page">
     <h1>~*~ The Penguin Grooming Page ~*~</h1>
@@ -120,7 +172,7 @@
 
     <div class="music-box">
       <p>&#9835; NOW PLAYING: "The Entertainer" by Scott Joplin (1902) &#9835;</p>
-      <midi-player src="entertainer.mid" sound-font></midi-player>
+      <midi-player src="song.mid" sound-font></midi-player>
     </div>
 
     <h2>A Penguin's Daily Grooming Routine</h2>
@@ -133,8 +185,19 @@
       <li><b>Once a year: the big makeover.</b> During the "catastrophic molt," a penguin replaces <i>all</i> its feathers at once. It looks extremely scruffy and can't swim for a few weeks, so it stays on land and lives off its fat until the new coat comes in.</li>
     </ol>
 
+    <!-- High five! Hand image: Twemoji (CC-BY 4.0), credited in the footer -->
+    <div class="high-five">
+      <button class="hand-button" id="hand" type="button" aria-label="High five me!">
+        <img src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@17.0.3/assets/svg/1f590.svg" alt="">
+        <span>HIGH FIVE ME!</span>
+      </button>
+      <div class="five-count" id="fiveCount">High fives so far: 0</div>
+    </div>
+
     <footer>
       Best viewed in 800x600 with your speakers ON &#128266;<br>
+      Hand graphic: <a href="https://github.com/jdecked/twemoji">Twemoji</a>, licensed
+      <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY 4.0</a><br>
       &copy; 2026 Your Name
     </footer>
   </div>
@@ -186,15 +249,104 @@
     }
   </script>
 
-
   <script>
-  // Start the music the first time the visitor clicks or presses a key anywhere
-  const player = document.querySelector("midi-player");
-  function startMusic() {
-    if (player && !player.playing) player.start();
-  }
-  document.addEventListener("click", startMusic, { once: true });
-  document.addEventListener("keydown", startMusic, { once: true });
-</script>
+    // ---- Start the music on the visitor's first click or keypress ----
+    const player = document.querySelector("midi-player");
+    function startMusic() {
+      if (player && !player.playing) player.start();
+    }
+    document.addEventListener("click", startMusic, { once: true });
+    document.addEventListener("keydown", startMusic, { once: true });
+
+    // ---- High five + particle burst ----
+    const sparkCanvas = document.getElementById("sparkles");
+    const sctx = sparkCanvas.getContext("2d");
+    const hand = document.getElementById("hand");
+    const fiveCount = document.getElementById("fiveCount");
+    const colors = ["#ff3b3b", "#ffd400", "#3bff6a", "#3bc8ff", "#c43bff", "#ffffff"];
+    let particles = [];
+    let fives = 0;
+    let animating = false;
+
+    function sizeSparks() {
+      sparkCanvas.width = window.innerWidth;
+      sparkCanvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", sizeSparks);
+    sizeSparks();
+
+    // Draws a little 5-pointed star
+    function star(x, y, r, rot) {
+      sctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const radius = i % 2 === 0 ? r : r / 2.2;
+        const a = rot + (i * Math.PI) / 5;
+        sctx.lineTo(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+      }
+      sctx.closePath();
+      sctx.fill();
+    }
+
+    function burst(x, y) {
+      for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 7;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          size: 4 + Math.random() * 6,
+          rot: Math.random() * Math.PI,
+          spin: (Math.random() - 0.5) * 0.4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1
+        });
+      }
+      if (!animating) {
+        animating = true;
+        requestAnimationFrame(animateSparks);
+      }
+    }
+
+    function animateSparks() {
+      sctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+      for (const p of particles) {
+        p.vy += 0.25;          // gravity
+        p.vx *= 0.98;          // air drag
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.spin;
+        p.life -= 0.015;       // fade out
+        sctx.globalAlpha = Math.max(p.life, 0);
+        sctx.fillStyle = p.color;
+        star(p.x, p.y, p.size, p.rot);
+      }
+      sctx.globalAlpha = 1;
+      particles = particles.filter(p => p.life > 0);
+      if (particles.length) {
+        requestAnimationFrame(animateSparks);
+      } else {
+        animating = false;
+        sctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+      }
+    }
+
+    hand.addEventListener("click", (e) => {
+      // Burst from the mouse; keyboard presses burst from the hand's center
+      let x = e.clientX, y = e.clientY;
+      if (!x && !y) {
+        const box = hand.getBoundingClientRect();
+        x = box.left + box.width / 2;
+        y = box.top + box.height / 2;
+      }
+      burst(x, y);
+
+      hand.classList.add("slap");
+      setTimeout(() => hand.classList.remove("slap"), 120);
+
+      fives++;
+      fiveCount.textContent = "High fives so far: " + fives + (fives >= 10 ? " — you're on fire!" : "");
+    });
+  </script>
 </body>
 </html>
